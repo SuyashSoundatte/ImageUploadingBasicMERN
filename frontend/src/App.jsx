@@ -37,27 +37,37 @@ function App() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        setImage(file);
-        console.log("Selected file:", file); // Check the selected file
+      setImage(file);
+      console.log("Selected file:", file);
     }
-};
-
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.name || !formData.email || !formData.age || !formData.bio || !image) {
+        console.error("Please fill all fields and select an image.");
+        alert("Please fill all fields and select an image.");
+        return;
+    }
+
+    const age = parseInt(formData.age);
+    if (age < 18) {
+        console.error("Age must be at least 18.");
+        alert("Age must be at least 18.");
+        return;
+    }
+
     const formDataToSend = new FormData();
     formDataToSend.append("name", formData.name);
     formDataToSend.append("email", formData.email);
-    formDataToSend.append("age", formData.age);
+    formDataToSend.append("age", age);
     formDataToSend.append("bio", formData.bio);
     formDataToSend.append("FY", formData.FY);
     formDataToSend.append("SY", formData.SY);
     formDataToSend.append("TY", formData.TY);
     
-    if (image) {
-        formDataToSend.append("image", image); // Ensure 'image' is a valid File object
-    }
+    formDataToSend.append("imageUrl", image);
 
     try {
         const postURL = "http://localhost:3000/data";
@@ -67,9 +77,11 @@ function App() {
             },
         });
         console.log("Response received:", response.data);
-        // Handle the response data...
+        setUserData(prevData => [...prevData, response.data.show]); 
+        setFormData({ name: "", email: "", age: "", bio: "", FY: "", SY: "", TY: "" }); 
+        setImage(null); // Reset image
     } catch (error) {
-        console.error("Error posting data:", error.response.data); // Log detailed error
+        console.error("Error posting data:", error.response ? error.response.data : error.message); // Log detailed error
     }
 };
 

@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Data = require('../models/data.model');
 const cloudinary = require('cloudinary').v2;
-const path = require('path');
 require('dotenv').config();
 
 // Configure Cloudinary
@@ -11,26 +10,33 @@ cloudinary.config({
     api_key: process.env.API_KEY,
     api_secret: process.env.API_SECRET,
 });
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
+
 // GET route to fetch data
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res) => {
     try {
         const data = await Data.find();
         res.status(200).json({ data });
     } catch (err) {
         res.status(500).json({
             message: "Some error occurred",
-            error: err.message // Corrected to 'message'
+            error: err.message
         });
     }
 });
 
 // POST route to add new data
-router.post('/', async (req, res, next) => {
+router.post('/', async (req, res) => {
     const { name, email, age, bio, FY, SY, TY } = req.body;
+
     try {
+        // Check if the image file is present
+        if (!req.files || !req.files.imageUrl) {
+            return res.status(400).json({ message: "Image file is required." });
+        }
+
         // Upload the image to Cloudinary
         const result = await cloudinary.uploader.upload(req.files.imageUrl.tempFilePath);
+
         const newData = new Data({
             name,
             email,
@@ -41,6 +47,7 @@ router.post('/', async (req, res, next) => {
             TY,
             imageUrl: result.secure_url,
         });
+
         const savedData = await newData.save();
 
         res.status(200).json({
